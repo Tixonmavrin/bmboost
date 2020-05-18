@@ -148,23 +148,26 @@ class Bmboost(object):
         logging.info("BmBoost start training")
         for i in range(self.num_boost_round):
             # train current tree
-            tree = Tree(self.min_sample_split,
-                        self.min_child_weight,
-                        self.max_depth,
-                        self.colsample,
-                        self.subsample,
-                        self.reg_lambda,
-                        self.gamma,
-                        self.num_thread)
-            tree.fit(attribute_list, class_list, row_sampler, col_sampler, bin_structure)
+            trees_round = []
+            for param in params:
+                tree = Tree(param['min_sample_split'],
+                            param['min_child_weight'],
+                            param['max_depth'],
+                            param['colsample'],
+                            param['subsample'],
+                            param['reg_lambda'],
+                            param['gamma'],
+                            param['num_thread'])
+                tree.fit(attribute_list, class_list, row_sampler, col_sampler, bin_structure)
+                trees_round.append(tree)
 
             # when finish building this tree, update the class_list.pred, grad, hess
             class_list.update_pred(self.eta)
             class_list.update_grad_hess(self.loss, self.scale_pos_weight)
 
             # save this tree
-            self.trees.append(tree)
-            logging.debug("current tree has {} nodes, {} nan tree nodes".format(tree.nodes_cnt, tree.nan_nodes_cnt))
+            self.trees.append(trees_round)
+            logging.debug("current tree has {} nodes, {} nan tree nodes".format(trees_round[0].nodes_cnt, trees_round[0].nan_nodes_cnt))
 
             # print training information
             if self.eval_metric is None:
@@ -181,7 +184,12 @@ class Bmboost(object):
                     logging.info("BmBoost round {iteration}, train-{eval_metric}: {train_metric:.4f}".format(
                         iteration=i, eval_metric=self.eval_metric, train_metric=train_metric))
                 else:
-                    val_pred += self.eta * tree.predict(val_features)
+                    pred = trees_round[0].predict(val_features)
+                    for t in trees_round[1:]:
+                        pred += t.predict(val_features)
+                    pred /= len(trees_round)
+                    
+                    val_pred += self.eta * pred
                     val_metric = mertric_func(self.loss.transform(val_pred), val_label)
                     logging.info("BmBoost round {iteration}, train-{eval_metric}: {train_metric:.4f}, val-{eval_metric}: {val_metric:.4f}".format(
                         iteration=i, eval_metric=self.eval_metric, train_metric=train_metric, val_metric=val_metric))
@@ -214,8 +222,14 @@ class Bmboost(object):
         assert len(self.trees) > 0
         preds = np.zeros((features.shape[0],))
         preds += self.first_round_pred
-        for tree in self.trees:
-            preds += self.eta * tree.predict(features)
+        
+        for tree_round in self.trees:
+            pred = trees_round[0].predict(val_features)
+            for t in trees_round[1:]:
+                pred += t.predict(val_features)
+            pred /= len(trees_round)
+     
+            preds += self.eta * pred
         return self.loss.transform(preds)
 
     @property
