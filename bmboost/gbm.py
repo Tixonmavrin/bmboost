@@ -125,17 +125,17 @@ class Bmboost(object):
         # we should get (val_features,val_label)
         # and set some variable to check when to stop
         do_validation = True
-        if not isinstance(validation_data, tuple):
+        if not isinstance(params[0]['validation_data'], tuple):
             raise TypeError("validation_data should be (val_features, val_label)")
 
-        val_features, val_label = validation_data
+        val_features, val_label = params[0]['validation_data']
         val_pred = None
         if val_features is None or val_label is None:
             do_validation = False
         else:
             val_pred = np.ones(val_label.shape) * self.first_round_pred
 
-        if maximize:
+        if params[0]['maximize']:
             best_val_metric = - np.inf
             best_round = 0
             become_worse_round = 0
