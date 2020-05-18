@@ -223,7 +223,7 @@ class Bmboost(object):
         preds = np.zeros((features.shape[0],))
         preds += self.first_round_pred
         
-        for tree_round in self.trees:
+        for trees_round in self.trees:
             pred = trees_round[0].predict(val_features)
             for t in trees_round[1:]:
                 pred += t.predict(val_features)
