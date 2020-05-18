@@ -149,7 +149,8 @@ class Bmboost(object):
         for i in range(self.num_boost_round):
             # train current tree
             trees_round = []
-            for param in params:
+            paramsn = [np.random.choice(params)]
+            for param in paramsn:
                 tree = Tree(param['min_sample_split'],
                             param['min_child_weight'],
                             param['max_depth'],
