@@ -8,6 +8,7 @@ from binning import BinStructure
 from sampling import RowSampler, ColumnSampler
 import logging
 from collections import defaultdict
+import copy
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s : %(message)s', datefmt="[%H:%M:%S]")
 
@@ -36,22 +37,8 @@ class Bmboost(object):
     def fit(self,
             features,
             label,
-            validation_data=(None, None),
-            early_stopping_rounds=np.inf,
-            maximize=True,
-            eval_metric=None,
-            loss="logisticloss",
-            eta=0.3,
-            num_boost_round=1000,
-            max_depth=6,
-            scale_pos_weight=1,
-            subsample=0.8,
-            colsample=0.8,
-            min_child_weight=1,
-            min_sample_split=10,
-            reg_lambda=1.0,
-            gamma=0,
-            num_thread=-1):
+            params_mass
+            ):
 
         """
         :param features: np.array
@@ -69,18 +56,48 @@ class Bmboost(object):
         :param num_thread: number of threself.tree_predict_Xad to parallel
         :param eval_metric: evaluation metric, provided: "accuracy"
         """
-        self.eta = eta
-        self.num_boost_round = num_boost_round
-        self.max_depth = max_depth
-        self.subsample = subsample
-        self.colsample = colsample
-        self.reg_lambda = reg_lambda
-        self.gamma = gamma
-        self.min_sample_split = min_sample_split
-        self.num_thread = num_thread
-        self.eval_metric = eval_metric
-        self.min_child_weight = min_child_weight
-        self.scale_pos_weight = scale_pos_weight
+        params = copy.deepcopy(params_mass)
+        
+        base_params = {
+            'validation_data':(None, None),
+            'early_stopping_rounds':np.inf,
+            'maximize':True,
+            'eval_metric':None,
+            'loss':"logisticloss",
+            'eta':0.3,
+            'num_boost_round':1000,
+            'max_depth':6,
+            'scale_pos_weight':1,
+            'subsample':0.8,
+            'colsample':0.8,
+            'min_child_weight':1,
+            'min_sample_split':10,
+            'reg_lambda':1.0,
+            'gamma':0,
+            'num_thread':-1}
+        
+        if type(params) != list:
+            params = [params]
+        if len(params) == 0:
+            params = [base_params]
+        else:
+            for i in range(len(params)):
+                for k in base_params.keys():
+                    if k not in params[i]:
+                        params[i][k] = base_params[k]
+            
+        self.eta = params[0]['eta']
+        self.num_boost_round = params[0]['num_boost_round']
+        self.max_depth = params[0]['max_depth']
+        self.subsample = params[0]['subsample']
+        self.colsample = params[0]['colsample']
+        self.reg_lambda = params[0]['reg_lambda']
+        self.gamma = params[0]['gamma']
+        self.min_sample_split = params[0]['min_sample_split']
+        self.num_thread = params[0]['num_thread']
+        self.eval_metric = params[0]['eval_metric']
+        self.min_child_weight = params[0]['min_child_weight']
+        self.scale_pos_weight = params[0]['scale_pos_weight']
         self.first_round_pred = 0
 
         # initial loss function
