@@ -224,9 +224,9 @@ class Bmboost(object):
         preds += self.first_round_pred
         
         for trees_round in self.trees:
-            pred = trees_round[0].predict(val_features)
+            pred = trees_round[0].predict(features)
             for t in trees_round[1:]:
-                pred += t.predict(val_features)
+                pred += t.predict(features)
             pred /= len(trees_round)
      
             preds += self.eta * pred
