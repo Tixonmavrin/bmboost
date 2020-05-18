@@ -101,14 +101,14 @@ class Bmboost(object):
         self.first_round_pred = 0
 
         # initial loss function
-        if loss == "logisticloss":
+        if params[0]['loss'] == "logisticloss":
             self.loss = LogisticLoss()
-        elif loss == "squareloss":
+        elif params[0]['loss'] == "squareloss":
             self.loss = SquareLoss()
             self.first_round_pred = label.mean()
         else:
             try:
-                self.loss = CustomizeLoss(loss)
+                self.loss = CustomizeLoss(params[0]['loss'])
             except:
                 raise NotImplementedError("loss should be 'logisticloss','squareloss', or customize loss function")
 
